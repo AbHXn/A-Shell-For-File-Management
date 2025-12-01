@@ -63,10 +63,8 @@ class ExecUtils:
 	@staticmethod
 	def copy_file(src, dst):
 		try:
-			print(src, dst)
 			if os.path.exists(dst) and os.path.isdir(dst):
 				if os.path.isdir(src):
-					print("here")
 					shutil.copytree(src, os.path.join( dst,
 							os.path.basename(src)), dirs_exist_ok=True)
 				else:
@@ -88,7 +86,7 @@ class ExecUtils:
 				shutil.move(src, dst)
 			else: os.rename(src, dst)
 			return True
-		except Exception:
+		except Exception as e:
 			cprint( f"File Move Error: {e}" , "red")
 			return False
 
@@ -110,7 +108,7 @@ class ExecUtils:
 						name = colored(name, 'blue') if file_.is_dir() else name
 						print(f"{name}", end="  ")
 					print()
-		except Exception as error:
+		except Exception as e:
 			cprint( f"Listing Error: {e}", "red" )
 
 	@staticmethod
