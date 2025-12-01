@@ -270,13 +270,13 @@ class RawCmdParser:
 					cur_data = ''
 			
 			elif self.cmd_string[ start_index ] == EXPR_OPEN:
-				cmd_length, push_node = getExpr( self.cmd_string, start_index ) or [0, None]
+				cmd_length, push_node = self.getExpr( self.cmd_string, start_index ) or [0, None]
 				if push_node:
 					list_data.append( push_node )
 					start_index = cmd_length
 
 			elif self.cmd_string[ start_index ] == APPO:
-				cmd_length, push_node = getUntil( self.cmd_string, start_index + 1, APPO ) or [0, None]
+				cmd_length, push_node = self.getUntil( self.cmd_string, start_index + 1, APPO ) or [0, None]
 				if push_node:
 					list_data.append( push_node )
 					start_index = cmd_length
