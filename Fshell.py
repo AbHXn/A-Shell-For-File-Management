@@ -1,10 +1,11 @@
 from datetime import date
 from termcolor import cprint, colored
-import subprocess
 import sys
 import platform
 import os
 import shutil
+import time
+import re
 
 REMOVE      	= '-'
 CREATE      	= '+'
@@ -30,97 +31,169 @@ S_CMDS_B = ( INPUT, CHDIR )
 BASE_DIR = '.'
 
 class ExecUtils:
+	@staticmethod
+	def print_dir_structure( dir_path, Msg, think_time = False ):	
+		if not isinstance( dir_path, str ):
+			raise TypeError( "Invalid Directory Argument" )
+		
+		try:
+			dir_path = dir_path.strip()
+
+			if dir_path == '': return 
+			
+			for dirs, _, files in os.walk( dir_path ):
+				for file in files:
+					if think_time: 
+						time.sleep( 0.2 )
+					
+					full_path = os.path.join( dirs, file )
+					cprint( f"{Msg}: {full_path}" , "green")
+			
+			if think_time: # a small time to think
+				time.sleep( 2 )
+
+		except Exception as _:
+			pass
+
 
 	@staticmethod
-	def create_file(base, name):
+	def create_file( base, name ):
+		if not isinstance( base, str ) or not isinstance( name, str ):
+			raise TypeError( "File path should be a string" )
+
 		try:
-			if name == "":  return False
-			path = os.path.join(base, name)
-			if name.endswith('/') or name.endswith(os.sep):
-				os.makedirs(path, exist_ok=True)
+			base, name = base.strip(), name.strip()
+			path = os.path.join( base, name )
+
+			if path == '': return 
+
+			if name.endswith( os.sep ):
+				os.makedirs( path, exist_ok=True )
 			else:
-				os.makedirs(os.path.dirname(path), exist_ok=True)
-				if not os.path.exists(path):
+				os.makedirs( base, exist_ok=True )
+				if not os.path.exists( path ):
 					with open(path, "w") as file:
 						pass
-			return True
-		except Exception as e:
-			cprint(f"File Creation Failed: {e}", "red")
-			return False
-
-	@staticmethod
-	def remove_file(path):
-		try:
-			if os.path.isdir(path):
-				shutil.rmtree(path)
-			elif os.path.exists(path):
-				os.remove(path)
-			return True
-		except Exception as e:
-			cprint(f"File Remove Error: {e}", "red")
-			return False
-
-	@staticmethod
-	def copy_file(src, dst):
-		try:
-			if os.path.exists(dst) and os.path.isdir(dst):
-				if os.path.isdir(src):
-					shutil.copytree(src, os.path.join( dst,
-							os.path.basename(src)), dirs_exist_ok=True)
 				else:
-					os.makedirs(dst, exist_ok=True)
-					shutil.copy2(src, os.path.join(dst, os.path.basename(src)))
+					raise FileExistsError( "File already exists" )
+
+		except Exception as e:
+			cprint( f"File Creation Failed: {e}", "red" )
+
+	@staticmethod
+	def remove_file( path ):
+		try:
+			path = path.strip()	
+
+			if path == '':
+				return 		
+
+			if os.path.isdir( path ):
+				ExecUtils.print_dir_structure( path, "Removing", think_time = True )
+				shutil.rmtree( path )
+			
+			elif os.path.exists( path ):
+				cprint( f"Removing: {path}", "green" )
+				time.sleep( 2 )
+				os.remove( path )
+
 			else: 
-				with open(dst, "w", encoding='utf-8') as file_w:
-					with open(src, "r", encoding="utf-8") as file_r:
-						file_w.write(file_r.read())
-			return True
+				FileNotFoundError( "Failed to remove file" )
+
+		except Exception as e:
+			cprint( f"File Remove Error: {e}", "red" )
+
+	@staticmethod
+	def copy_file( src, dst ):
+		if not isinstance( src, str ) or not isinstance( dst, str ):
+			raise TypeError( "File path should be a string" )
+
+		try:
+			src, dst = src.strip( ), dst.strip( )
+
+			if os.path.exists( dst ) and os.path.isdir( dst ):
+				if os.path.isdir( src ): # if src is a directory
+					ExecUtils.print_dir_structure( src, "Copying: " )
+
+					shutil.copytree( src, os.path.join( dst,
+							os.path.basename( src ) ), dirs_exist_ok=True )
+				else:
+					os.makedirs( dst, exist_ok=True )
+					shutil.copy2( src, os.path.join( dst, os.path.basename( src ) ) )
+			else: 
+				with open( dst, "w", encoding='utf-8' ) as file_w:
+					with open( src, "r", encoding="utf-8" ) as file_r:
+						file_w.write( file_r.read() )
+
 		except Exception as e:
 			cprint( f"File Copy Error: {e}", "red" )
-			return False
 
 	@staticmethod
-	def move_file(src, dst):
+	def move_file( src, dst ):
+		if not isinstance( src, str ) or not isinstance( dst, str ):
+			raise TypeError( "File path should be a string" )
+
 		try:
-			if os.path.exists(src) and os.path.exists(dst):
-				shutil.move(src, dst)
-			else: os.rename(src, dst)
-			return True
+			src, dst = src.strip(), dst.strip()
+			if src == '' or dst == '':
+				return
+
+			if os.path.exists( src ) and os.path.exists( dst ):
+				ExecUtils.print_dir_structure( src, "Moving" )
+				shutil.move( src, dst )
+			else: 
+				os.rename(src, dst)
+
 		except Exception as e:
 			cprint( f"File Move Error: {e}" , "red")
-			return False
 
 	@staticmethod
-	def list_contents(folders):
-		if not isinstance(folders, list):
-			folders = [('.', folders)]
+	def list_contents( folders ):
+		if not isinstance( folders, list ):
+			folders = [ ( BASE_DIR, folders ) ]
 		try:
 			for parent, child in folders:
-				folder = os.path.join(parent, child) 
+				folder = os.path.join( parent, child ) 
 				cprint(f"{child}:", "green")
-				if os.path.exists(folder) and os.path.isfile(folder):
-					with open(folder, "r", encoding="utf-8") as txt_file:
-						print(txt_file.read())
+
+				if os.path.exists( folder ) and os.path.isfile( folder ):
+					with open( folder, "r", encoding="utf-8" ) as txt_file:
+						print( txt_file.read() )
 					return
-				with os.scandir(folder) as d_files:
-					for file_ in d_files:
-						name = file_.name
-						name = colored(name, 'blue') if file_.is_dir() else name
+
+				with os.scandir( folder ) as d_files:
+					for file in d_files:
+						name = file.name
+						name = colored(name, 'blue') if file.is_dir() else name
 						print(f"{name}", end="  ")
 					print()
+
 		except Exception as e:
 			cprint( f"Listing Error: {e}", "red" )
 
 	@staticmethod
-	def input_file(file_name):
+	def input_file( file_name ):
+		if not isinstance( file_name, str ):
+			raise TypeError( "Filname should be a str" )
+
 		print(f"Enter text for {file_name} (Ctrl+C to save):")
 		try:
 			with open(file_name, "w", encoding='utf-8') as w_file:
 				while True:
 					line = input()
 					w_file.write(line + '\n')
+		
 		except KeyboardInterrupt:
 			cprint( "File Saved", "green" )
+
+	@staticmethod
+	def _full_path_data( CmdHandler, folder ):
+		if isinstance( CmdHandler, ScriptHandler ):
+			content = CmdHandler.execute( folder )
+			return content
+		else: 
+			return CmdHandler
+
 
 class ScriptHandler:
 	def __init__(self, script):
@@ -128,13 +201,30 @@ class ScriptHandler:
 
 	def execute(self, folder):
 		try:
-			dir_files = os.listdir(folder)
+			if not isinstance( folder , str ):
+				return 
 			
-			self.script = self.script[1:-1].replace( '*', str(dir_files) )
-			results = eval( self.script )
-			cprint(f"\tSCRIPT RESULT\n{results}", "green")
+			folder = folder.strip()
+			
+			if not os.path.isdir( folder ):
+				return
+			
+			dir_files 	= [ f + "/" if os.path.isdir(os.path.join(folder, f)) else f for f in os.listdir( folder ) ]
+			self.script = self.script[ 1:-1 ].strip( )
+
+			try:
+				regex = re.compile( self.script )
+			except re.error:
+				raise ValueError("Invalid regex pattern")
+
+			files = [f for f in dir_files if regex.search(f)]
+
+			cprint(f"\tSCRIPT RESULT\n", "green")
+			for file in files:
+				cprint(file, 'cyan')
 			print()
-			return [line.strip() for line in results if line.strip()]
+
+			return files
 		except Exception as e:
 			cprint(f"Script execution failed: {e}", "red")
 			return []
@@ -146,14 +236,15 @@ class DoubleCmdHandler:
 		self.optr = optr
 
 	def execute_command( self, currentFolder ):
-		leftFiles 	 = self._full_path_data( self.left, currentFolder )
-		righFIles    = self._full_path_data( self.right, currentFolder )
+		leftFiles 	 = ExecUtils._full_path_data( self.left, currentFolder )
+		righFIles    = ExecUtils._full_path_data( self.right, currentFolder )
 		finalContent = self.join_contents( leftFiles, righFIles ) 
 
 		if finalContent == []: return False
 
 		for source, dest in finalContent:
 			source = os.path.join( currentFolder, source )
+
 			if self.optr == CREATE:
 				if os.path.exists(source):
 					ExecUtils.create_file(source, dest)
@@ -171,14 +262,8 @@ class DoubleCmdHandler:
 						ExecUtils.copy_file(source, dest)
 					else: ExecUtils.move_file(source, dest)
 				else: print(f"Source {dest} not found.")
-		return True
 
-	def _full_path_data( self , CmdHandler, folder ):
-		if isinstance( CmdHandler, ScriptHandler ):
-			content = CmdHandler.execute( folder )
-			return content
-		else: 
-			return CmdHandler
+		return True
 
 	def join_contents( self, left_content, right_content ):
 		if not isinstance( left_content, list ):
@@ -198,7 +283,7 @@ class SingleCmdHandler:
 		self.optr = optr
 
 	def execute_command( self, folder ):
-		final_content = self._full_path_data( self.cmd, folder )
+		final_content = ExecUtils._full_path_data( self.cmd, folder )
 		final_content = [ final_content ] if not isinstance( final_content, list ) else final_content
 		try:
 			for cmd in final_content:
@@ -218,22 +303,16 @@ class SingleCmdHandler:
 					ExecUtils.list_contents( list_path )
 
 				elif self.optr == INPUT:
+					print( folder, cmd )
 					full_file = os.path.join( folder, cmd )
 					if not os.path.exists(full_file):
-						ExecUtils.create_file(full_file, cmd)
+						ExecUtils.create_file( folder , cmd)
 					ExecUtils.input_file(full_file)
 				else: pass
 			return True 
 		except Exception as error:
 			cprint(f"Execution Failed {error}", "red")
 			return False
-
-	def _full_path_data( self , CmdHandler, folder ):
-		if isinstance( CmdHandler, ScriptHandler ):
-			content = CmdHandler.execute( folder )
-			return content
-		else: 
-			return CmdHandler
 
 # convert raw inputs to tokens
 class RawCmdParser:
@@ -422,7 +501,6 @@ class CmdExecuter( RawCmdParser ):
 				double = False
 
 		self.cmdHandler = CmdHandler
-
 
 def input_cmd( ):
 	run_input = True
