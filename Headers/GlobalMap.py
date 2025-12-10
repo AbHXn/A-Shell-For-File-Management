@@ -10,7 +10,7 @@ class GlobalMap:
 
 		if path == '$':
 			currentDir = os.getcwd()
-			self.__Global_Map[ name ] = currentDir
+			self.__Global_Map[ name ] = currentDir + os.sep
 		else:
 			self.__Global_Map[ name ] = path
 

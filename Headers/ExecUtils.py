@@ -25,7 +25,7 @@ class ExecUtils:
 			if think_time: # a small time to think
 				time.sleep( 2 )
 
-		except Exception as _:
+		except Exception as _: 
 			pass
 
 

@@ -2,7 +2,6 @@ from .ExecUtils import ExecUtils
 from termcolor import cprint
 from .CmdConstants import *
 import os
-import re
 
 class DoubleCmdHandler:
 	def __init__(self, left, right, optr):
@@ -33,7 +32,7 @@ class DoubleCmdHandler:
 				else: print(f"{dest} not found.")			
 
 			elif self.optr in (COPY, CUT):
-				if os.path.exists( source ):
+				if os.path.exists( source ):						
 					if self.optr == COPY: 
 						ExecUtils.copy_file(source, dest)
 					else: ExecUtils.move_file(source, dest)
@@ -52,8 +51,20 @@ class DoubleCmdHandler:
 		if not isinstance( right_content, list ):
 			right_content = [ right_content ] 
 
-		final_content = [ ( file1, file2 ) for file1 in left_content 
-						  for file2 in right_content ]
+		final_content = []
+
+		for file1 in left_content:
+			for file2 in right_content:
+				if file1.startswith( MAP_PATH ):
+					fullFile1Path = GLOBAL_MAP.getPath( file1[1:] )
+					file1 = fullFile1Path if fullFile1Path else file1
+
+				if file2.startswith( MAP_PATH ):
+					fullFile2Path = GLOBAL_MAP.getPath( file2[1:] )
+					file2 = fullFile1Path if fullFile2Path else file2
+
+				final_content.append( ( file1, file2 ) )
+
 		return final_content
 
 
@@ -66,6 +77,10 @@ class SingleCmdHandler:
 		final_content = [ self.cmd ] if not isinstance( self.cmd, list ) else self.cmd
 		try:
 			for cmd in final_content:
+				if cmd.startswith(MAP_PATH):
+					fullPath = GLOBAL_MAP.getPath( cmd[1:] )
+					cmd = fullPath if fullPath else cmd
+
 				if self.optr == CHDIR:
 					trace_folder = os.path.join( folder, cmd )
 					try:
