@@ -167,23 +167,18 @@ class ExecUtils:
 			files_script = False
 			if isinstance( files, str ):
 				files = [ files ]
-			elif isinstance( files, list ) or isinstance( files, tuple ):
-				pass
-			else: files_script = True;
 
 			for folder in folders:
-				if files_script:
-					files = files.execute( folder );
-
+				cprint(f"{folder}: ", "blue")
 				with os.scandir( folder ) as d_files:
 					for file in d_files:
 						
 						if not any( sfile in file.name for sfile in files ):
 							continue
 
-						name = file.name
-						name = colored(name, 'light-green') if file.is_dir() else name
-						print(f"{name}", end="  ")
+						name = file.name + '/' if file.is_dir() else file.name
+						name = colored(name, 'red') 
+						print(f"\t{name}", end="  ")
 					print()
 
 		except Exception as e:

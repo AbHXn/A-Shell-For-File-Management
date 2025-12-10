@@ -4,24 +4,6 @@ from .CmdConstants import *
 import os
 import re
 
-def _full_path_data( CmdHandler, folder ):
-	if isinstance( CmdHandler, ScriptHandler ):
-		content = CmdHandler.execute( folder )
-		return content
-	else: 
-		return CmdHandler
-
-class ScriptHandler:
-	def __init__(self, script):
-		self.script = script
-
-	def execute(self, folder):
-		try:
-			raise
-		except Exception as e:
-			cprint(f"Script execution failed: {e}", "red")
-			return []
-
 class DoubleCmdHandler:
 	def __init__(self, left, right, optr):
 		self.left  = left
@@ -29,11 +11,12 @@ class DoubleCmdHandler:
 		self.optr = optr
 
 	def execute_command( self, currentFolder ):
-		leftFiles 	 =_full_path_data( self.left, currentFolder )
-		righFIles    =_full_path_data( self.right, currentFolder )
-		finalContent = self.join_contents( leftFiles, righFIles ) 
+		finalContent = self.join_contents( self.left, self.right ) 
 
 		if finalContent == []: return False
+
+		if self.optr == FIND:
+			ExecUtils.list_files_given( self.right, self.left )
 
 		for source, dest in finalContent:
 			source = os.path.join( currentFolder, source )
@@ -56,8 +39,9 @@ class DoubleCmdHandler:
 					else: ExecUtils.move_file(source, dest)
 				else: print(f"Source {dest} not found.")
 
-			elif self.optr == FIND:
-				ExecUtils.list_files_given( righFIles, self.left )
+			elif self.optr == MAP:
+				GLOBAL_MAP.addPath( self.left, self.right )
+
 
 		return True
 
@@ -79,8 +63,7 @@ class SingleCmdHandler:
 		self.optr = optr
 
 	def execute_command( self, folder ):
-		final_content = _full_path_data( self.cmd, folder )
-		final_content = [ final_content ] if not isinstance( final_content, list ) else final_content
+		final_content = [ self.cmd ] if not isinstance( self.cmd, list ) else self.cmd
 		try:
 			for cmd in final_content:
 				if self.optr == CHDIR:

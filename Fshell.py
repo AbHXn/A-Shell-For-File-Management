@@ -1,4 +1,4 @@
-from Headers.CmdHandlers import ScriptHandler, DoubleCmdHandler, SingleCmdHandler
+from Headers.CmdHandlers import DoubleCmdHandler, SingleCmdHandler
 from termcolor import cprint, colored
 from Headers.CmdConstants import *
 from datetime import date
@@ -26,8 +26,7 @@ class RawCmdParser:
 		return None
 
 	def getList(self, start_index ):
-		list_data = []
-		cur_data  = ''
+		list_data, cur_data = [], ''
 
 		while start_index < len( self.cmd_string ):
 			if self.cmd_string[ start_index ] == LIST_CLOSE:
@@ -39,12 +38,6 @@ class RawCmdParser:
 				if len( cur_data ) > 0:
 					list_data.append( cur_data )
 					cur_data = ''
-			
-			elif self.cmd_string[ start_index ] == EXPR_OPEN:
-				cmd_length, push_node = self.getExpr( self.cmd_string, start_index ) or [0, None]
-				if push_node:
-					list_data.append( push_node )
-					start_index = cmd_length
 
 			elif self.cmd_string[ start_index ] == APPO:
 				cmd_length, push_node = self.getUntil( self.cmd_string, start_index + 1, APPO ) or [0, None]
@@ -54,26 +47,6 @@ class RawCmdParser:
 
 			else: cur_data += self.cmd_string[ start_index ]
 			start_index += 1
-
-		return None
-
-	def getExpr(self, start_index ):
-		cur_index 	= start_index
-		cur_data  	= ''
-		expr_opened = 0
-
-		while cur_index < len( self.cmd_string ):
-			cur_data  += self.cmd_string[ cur_index ]
-			
-			if self.cmd_string[ cur_index ] == EXPR_CLOSE:
-				expr_opened -= 1
-				if not expr_opened:
-					return cur_index, cur_data
-
-			if self.cmd_string[ cur_index ] == EXPR_OPEN:
-				expr_opened += 1
-
-			cur_index += 1
 
 		return None
 
@@ -93,9 +66,6 @@ class RawCmdParser:
 
 			if c_char == LIST_OPEN:
 				data = self.getList( cur_index + 1 )
-
-			elif c_char == EXPR_OPEN:
-				data = self.getExpr( cur_index )
 
 			elif c_char in S_CMDS_A or c_char in S_CMDS_B:
 				raw_cmd_chain.append( c_char )
@@ -117,7 +87,9 @@ class RawCmdParser:
 				cur_index = cmd_length
 
 			cur_index += 1
+		print(raw_cmd_chain)
 		return raw_cmd_chain
+
 
 #convert tokens to CmdHandler and execute
 class CmdExecuter( RawCmdParser ):
@@ -141,24 +113,21 @@ class CmdExecuter( RawCmdParser ):
 
 	def rawCmdToHandler( self ):
 		cmdList = self.getRawCmdChain()
+
 		if cmdList is None:
 			self.cmdHandler = None
 			return
 
-		tempStack 	= []
-		CmdHandler  = []
-		optr 	  = None
-		double    = False
+		tempStack, CmdHandler = [], []
+		optr, double = None,  False
 
 		for cmd in cmdList:
 			if isinstance( cmd, list ):
 				tempStack.append( cmd )
 			else:
 				cmd = cmd.strip()
-				if cmd.startswith( EXPR_OPEN ):
-					tempStack.append( ScriptHandler( cmd ) )
 
-				elif cmd in D_CMDS:
+				if cmd in D_CMDS:
 					optr   = cmd
 					double = True
 					continue
@@ -203,8 +172,8 @@ def input_cmd( ):
 		if not opened:
 			cmd = input(colored(f"{date.today()}::$ ", "cyan"))
 		else: cmd = input(colored("::$ ", "cyan"))
-		opened += cmd.count( LIST_OPEN ) + cmd.count( EXPR_OPEN )
-		opened -= cmd.count( LIST_CLOSE ) + cmd.count( EXPR_CLOSE ) 
+		opened += cmd.count( LIST_OPEN ) 
+		opened -= cmd.count( LIST_CLOSE )
 
 		full_cmd += cmd
 		if opened > 0:
@@ -223,8 +192,8 @@ if __name__ == "__main__":
 	while True:
 		try:
 			cmd = input_cmd( )
-			cmd = cmd.strip()
+			cmd = cmd.strip( )
 			cmd_executer = CmdExecuter( cmd )
-			cmd_executer.execute_commands() 
+			cmd_executer.execute_commands( ) 
 		except Exception as error:
 			cprint(f"ErRrRoR {error}", "red")
