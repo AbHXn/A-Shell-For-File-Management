@@ -41,6 +41,11 @@ class DoubleCmdHandler:
 			elif self.optr == MAP:
 				GLOBAL_MAP.addPath( self.left, self.right )
 
+			elif self.optr == RE_APPEND:
+				ExecUtils.file_optr( dest, source, off='a' )
+
+			elif self.optr == RE_ASSIGN:
+				ExecUtils.file_optr( dest, source )
 
 		return True
 
@@ -50,7 +55,7 @@ class DoubleCmdHandler:
 
 		if not isinstance( right_content, list ):
 			right_content = [ right_content ] 
-
+			
 		final_content = []
 
 		for file1 in left_content:

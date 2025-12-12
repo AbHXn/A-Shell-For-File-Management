@@ -1,7 +1,6 @@
 from Headers.CmdHandlers import DoubleCmdHandler, SingleCmdHandler
 from termcolor import cprint, colored
 from Headers.CmdConstants import *
-from datetime import date
 import sys
 import platform
 import os
@@ -74,11 +73,12 @@ class RawCmdParser:
 				data = self.getUntil( cur_index + 1, APPO )
 	
 			else: data = self.getUntil( cur_index , ' ' )
+				
 
 			cmd_length, push_node = data if data else [0, None]
 
 			if push_node is not None:
-				if isinstance( push_node, str ) and push_node.endswith(LIST_CONTENTS):
+				if isinstance( push_node, str ) and push_node.endswith( LIST_CONTENTS ):
 					raw_cmd_chain.append( push_node[:-1] )
 					raw_cmd_chain.append( push_node[-1] )
 				else:
@@ -87,7 +87,6 @@ class RawCmdParser:
 				cur_index = cmd_length
 
 			cur_index += 1
-		print(raw_cmd_chain)
 		return raw_cmd_chain
 
 
@@ -169,8 +168,9 @@ def input_cmd( ):
 
 	opened = 0
 	while run_input:
+		current_path = colored( f"{os.getcwd()}$", "cyan" )
 		if not opened:
-			cmd = input(colored(f"{date.today()}::$ ", "cyan"))
+			cmd = input(f"{BADGE}::{current_path} ")
 		else: cmd = input(colored("::$ ", "cyan"))
 		opened += cmd.count( LIST_OPEN ) 
 		opened -= cmd.count( LIST_CLOSE )

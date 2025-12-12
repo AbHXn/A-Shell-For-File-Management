@@ -7,9 +7,10 @@ class GlobalMap:
 
 	def addPath( self, name, path ):
 		name, path = name.strip(), path.strip()
+		currentDir = os.getcwd()
 
-		if path == '$':
-			currentDir = os.getcwd()
+		if '$' in path:
+			currentDir = path.replace( '$', currentDir )
 			self.__Global_Map[ name ] = currentDir + os.sep
 		else:
 			self.__Global_Map[ name ] = path
