@@ -4,8 +4,6 @@ A lightweight, custom DSL (Domain Specific Language) for managing and executing 
 
 ## Usage
 
-# Usage
-
 ## Directory
 ```
 .!                             -> list current directory
