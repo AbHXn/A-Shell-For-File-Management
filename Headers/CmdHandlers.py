@@ -66,7 +66,7 @@ class DoubleCmdHandler:
 
 				if file2.startswith( MAP_PATH ):
 					fullFile2Path = GLOBAL_MAP.getPath( file2[1:] )
-					file2 = fullFile1Path if fullFile2Path else file2
+					file2 = fullFile2Path if fullFile2Path else file2
 
 				final_content.append( ( file1, file2 ) )
 
